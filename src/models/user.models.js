@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 
 const usersSchema = new mongoose.Schema(
   {
@@ -42,7 +44,7 @@ const usersSchema = new mongoose.Schema(
       {
         video: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
+          ref: "Video",
         },
         //   this watchedAt gets triggered when you push a video into the user's watch-history from a controller (when an API is hit)
         watchedAt: {
@@ -66,4 +68,40 @@ const usersSchema = new mongoose.Schema(
 
 // this means that - make the model as well as also export it, so we can use it in another files.
 // as soon as the database gets connected, these files directly get connected and they form the collection and then the data is stored inside the collection.
-export const User = mongoose.model("user", usersSchema);
+
+usersSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
+
+usersSchema.methods.isPasswordCorrect = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
+
+usersSchema.methods.generateAccessToken = function () {
+  return jwt.sign(
+    {
+      _id: this._id,
+      email: this.email,
+      username: this.username,
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+    }
+  );
+};
+usersSchema.methods.generateRefreshToken = function () {
+  return jwt.sign(
+    {
+      _id: this._id,
+    },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+    }
+  );
+};
+
+export const User = mongoose.model("User", usersSchema);
