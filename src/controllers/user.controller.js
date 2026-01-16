@@ -2,6 +2,7 @@ import asyncErrorHandler from "../utils/asyncErrorHandler.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import {User} from "../models/user.models.js";
+import generateAccessAndRefreshToken from "../utils/generateAccessAndRefreshTokens.js";
 
 const registerUser = asyncErrorHandler(async (req, res) => {
   let {username, email, fullName, password} = req.body;
@@ -49,4 +50,57 @@ const registerUser = asyncErrorHandler(async (req, res) => {
     .json(new ApiResponse(201, createdUser, "User created Successfully"));
 });
 
-export {registerUser};
+const loginUser = asyncErrorHandler(async (req, res) => {
+  let {email, password} = req.body;
+  email = email.toLowerCase().trim();
+  password = password.trim();
+
+  const required_fields = {
+    email,
+    password,
+  };
+
+  for (const [field, value] of Object.entries(required_fields)) {
+    if (!value) {
+      throw new ApiError(400, `${field} is required`);
+    }
+  }
+
+  const user = await User.findOne({email});
+  if (!user) throw new ApiError(404, "User not found");
+
+  const isPasswordCorrect = await user.isPasswordCorrect(password);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(401, "Invalid user credentials");
+  }
+
+  const {accessToken, refreshToken} = await generateAccessAndRefreshToken(
+    user._id
+  );
+
+  user.password = undefined;
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    path: "/",
+  };
+
+  res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user,
+        },
+        "User logged-in Successfully"
+      )
+    );
+});
+
+export {registerUser, loginUser};
