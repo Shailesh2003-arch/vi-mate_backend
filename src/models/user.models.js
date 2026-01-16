@@ -69,8 +69,8 @@ const usersSchema = new mongoose.Schema(
 // this means that - make the model as well as also export it, so we can use it in another files.
 // as soon as the database gets connected, these files directly get connected and they form the collection and then the data is stored inside the collection.
 
-usersSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+usersSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
 });
 
