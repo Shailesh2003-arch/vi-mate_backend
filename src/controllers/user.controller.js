@@ -79,7 +79,9 @@ const loginUser = asyncErrorHandler(async (req, res) => {
     user._id
   );
 
-  user.password = undefined;
+  const loggedInUser = await User.findOne(user._id).select(
+    "-password -refreshToken"
+  );
 
   const options = {
     httpOnly: true,
@@ -96,7 +98,7 @@ const loginUser = asyncErrorHandler(async (req, res) => {
       new ApiResponse(
         200,
         {
-          user,
+          loggedInUser,
         },
         "User logged-in Successfully"
       )
