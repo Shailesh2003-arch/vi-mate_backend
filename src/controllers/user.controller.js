@@ -106,12 +106,10 @@ const loginUser = asyncErrorHandler(async (req, res) => {
 });
 
 const logoutUser = asyncErrorHandler(async (req, res) => {
-  const user = req.user;
-
   await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set: {refreshToken: undefined},
+      $unset: {refreshToken: 1},
     },
     {new: true}
   );
