@@ -27,14 +27,24 @@ const usersSchema = new mongoose.Schema(
       required: [true, "Password is required"],
     },
     avatar: {
-      type: String,
-      default:
-        "https://res.cloudinary.com/dv2miz7hz/image/upload/v1767777012/default-avatar.png_cxobtu.png",
+      type: {
+        url: String,
+        public_id: String,
+      },
+      default: () => ({
+        url: process.env.DEFAULT_AVATAR_URL,
+        public_id: null,
+      }),
     },
     coverImage: {
-      type: String,
-      default:
-        "https://res.cloudinary.com/dv2miz7hz/image/upload/v1767775630/samples/landscapes/landscape-panorama.jpg",
+      type: {
+        url: String,
+        public_id: String,
+      },
+      default: () => ({
+        url: process.env.DEFAULT_COVER_IMAGE_URL,
+        public_id: null,
+      }),
     },
     subscribersCount: {
       type: Number,
