@@ -1,7 +1,7 @@
 import asyncErrorHandler from "../utils/asyncErrorHandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
-import Video from "../models/video.models.js";
+import {Video} from "../models/video.models.js";
 import uploadOnCloudinary from "../services/cloudinary.js";
 
 const publishVideo = asyncErrorHandler(async (req, res) => {
@@ -67,3 +67,5 @@ const publishVideo = asyncErrorHandler(async (req, res) => {
     )
   );
 });
+
+export {publishVideo};
