@@ -11,12 +11,24 @@ const videoSchema = new Schema(
       required: true,
     },
     thumbnail: {
-      type: String,
-      required: true,
+      url: {
+        type: String,
+        required: true,
+      },
+      public_id: {
+        type: String,
+        required: true,
+      },
     },
     videoFile: {
-      type: String,
-      required: true,
+      url: {
+        type: String,
+        required: true,
+      },
+      public_id: {
+        type: String,
+        required: true,
+      },
     },
     duration: {
       type: Number,
