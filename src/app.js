@@ -24,10 +24,11 @@ app.use(cookieParser());
 
 import userRouter from "./routes/user.routes.js";
 import videoRouter from "./routes/video.routes.js";
-
+import authRouter from "./routes/auth.routes.js";
 // declaring routes...
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
+app.use("/api/v1/auth", authRouter);
 app.use((err, req, res, next) => {
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({
