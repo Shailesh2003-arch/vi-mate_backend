@@ -25,6 +25,7 @@ app.use(cookieParser());
 import userRouter from "./routes/user.routes.js";
 import videoRouter from "./routes/video.routes.js";
 import authRouter from "./routes/auth.routes.js";
+
 // declaring routes...
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
