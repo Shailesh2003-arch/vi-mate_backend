@@ -167,4 +167,34 @@ const deleteVideo = asyncErrorHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Video deleted successfully"));
 });
 
-export {publishVideo, updateVideoDetails, deleteVideo};
+const getVideoById = asyncErrorHandler(async (req, res) => {
+  const {videoId} = req.params;
+  const video = await Video.findById(videoId);
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+  const streamUrl = cloudinary.url(video.videoFile.public_id, {
+    resource_type: "video",
+    streaming_profile: "auto",
+    format: "m3u8",
+    sign_url: true,
+    expires_at: Math.floor(Date.now() / 1000) + 300,
+  });
+
+  // view increment (non-blocking)
+  Video.updateOne({_id: videoId}, {$inc: {views: 1}}).catch(() => {});
+  res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        streamUrl,
+        title: video.title,
+        description: video.description,
+        duration: video.duration,
+      },
+      "Video ready to stream"
+    )
+  );
+});
+
+export {publishVideo, updateVideoDetails, deleteVideo, getVideoById};
