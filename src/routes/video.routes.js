@@ -2,6 +2,7 @@ import {Router} from "express";
 import verifyJWT from "../middlewares/auth.middleware.js";
 import {
   deleteVideo,
+  getVideoById,
   publishVideo,
   updateVideoDetails,
 } from "../controllers/video.controller.js";
@@ -28,5 +29,5 @@ router
   .route("/vid/:videoId")
   .patch(upload.single("thumbnail"), updateVideoDetails);
 
-router.route("/vid/:videoId").delete(deleteVideo);
+router.route("/vid/:videoId").get(getVideoById).delete(deleteVideo);
 export default router;
