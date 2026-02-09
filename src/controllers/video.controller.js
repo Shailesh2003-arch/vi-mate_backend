@@ -167,6 +167,8 @@ const deleteVideo = asyncErrorHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Video deleted successfully"));
 });
 
+// [LookAtMe]
+// I need to get views -> which will be coming from frontend as event (browser-event) and at backend I will verify it and increase view -> redis counter (DB -> source of truth)
 const getVideoById = asyncErrorHandler(async (req, res) => {
   const {videoId} = req.params;
   const video = await Video.findById(videoId);
@@ -197,4 +199,47 @@ const getVideoById = asyncErrorHandler(async (req, res) => {
   );
 });
 
-export {publishVideo, updateVideoDetails, deleteVideo, getVideoById};
+// get video feed...
+
+// Now this will be a read-heavy API - so there will be a lot of data coming in.
+// We can handle it by using one of the design patterns.
+// 1) Pagination - data is served in chunks.
+// 2) Database-replicas - Read-heavy operation if needs to performed, then we can maintain separate copy of the database (slave-databse).
+// 3) Caching - If this is a frequently accessed data, then we can implement a cache.
+// 4) Load balancers - we need to implement this in-order to maintain number of request.
+
+const getFeedVideos = asyncErrorHandler(async (req, res) => {
+  const page = Math.max(parseInt(req.query.page) || 1, 1);
+  const limit = Math.min(parseInt(req.query.limit) || 12, 50);
+  const skip = (page - 1) * limit;
+
+  const sortType = req.query.sort === "popular" ? {views: -1} : {createdAt: -1}; // default: latest
+  const videos = await Video.find({})
+    .sort(sortType)
+    .skip(skip)
+    .limit(limit)
+    .select("title thumbnail.url duration views owner createdAt")
+    .populate("owner", "username avatar.url")
+    .lean();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        page,
+        limit,
+        count: videos.length,
+        videos,
+      },
+      "Videos fetched successfully"
+    )
+  );
+});
+
+export {
+  publishVideo,
+  updateVideoDetails,
+  deleteVideo,
+  getVideoById,
+  getFeedVideos,
+};
