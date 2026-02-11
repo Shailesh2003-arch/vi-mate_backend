@@ -238,7 +238,7 @@ const getFeedVideos = asyncErrorHandler(async (req, res) => {
 });
 
 // this will increment the count inside the Redis...
-// this controller will be hit from frontend when frontend hits /watch/view endpoint
+// this controller will be hit from frontend when frontend hits /api/videos/:id/view
 const watchVideo = asyncErrorHandler(async(req,res)=>{
   const { videoId } = req.params;
 
