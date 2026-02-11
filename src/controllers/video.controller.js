@@ -4,6 +4,7 @@ import ApiError from "../utils/ApiError.js";
 import {Video} from "../models/video.models.js";
 import uploadOnCloudinary from "../services/cloudinary.js";
 import {v2 as cloudinary} from "cloudinary";
+import { incrementVideoView } from "../services/videoCounter.service.js";
 
 // controller for publishing a video
 // takes time as video is getting uploaded...
@@ -235,6 +236,21 @@ const getFeedVideos = asyncErrorHandler(async (req, res) => {
     )
   );
 });
+
+// this will increment the count inside the Redis...
+// this controller will be hit from frontend when frontend hits /watch/view endpoint
+const watchVideo = asyncErrorHandler(async(req,res)=>{
+  const { videoId } = req.params;
+
+  const video = await Video.findById(videoId);
+  if (!video) throw new ApiError(404, "Video not found");
+  await incrementVideoView(videoId);
+
+  return res.status(200).json(
+    new ApiResponse(200, video, "Video fetched successfully")
+  );
+})
+
 
 export {
   publishVideo,
