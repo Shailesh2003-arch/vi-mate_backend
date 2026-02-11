@@ -2,6 +2,8 @@ import dotenv from "dotenv";
 import connectDB from "./src/db/index.js";
 import app from "./src/app.js";
 
+import { syncViewsToDB } from "./src/workers/viewSync.Worker.js";
+import cron from "node-cron";
 dotenv.config({path: "./.env"});
 
 connectDB()
@@ -16,3 +18,7 @@ connectDB()
   .catch((err) => {
     console.log(`ERROR connecting to MongoDB`, err);
   });
+
+cron.schedule("*/1 * * * *", async () => {
+  await syncViewsToDB();
+});
