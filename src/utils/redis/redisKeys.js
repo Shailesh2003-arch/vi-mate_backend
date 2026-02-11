@@ -1,0 +1,1 @@
+export const videoViewsKey = videoId =>`video:${videoId}:views`;
