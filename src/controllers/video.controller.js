@@ -258,4 +258,5 @@ export {
   deleteVideo,
   getVideoById,
   getFeedVideos,
+  watchVideo
 };
