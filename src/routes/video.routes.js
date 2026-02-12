@@ -8,7 +8,7 @@ import {
   updateVideoDetails,
 } from "../controllers/video.controller.js";
 import {upload} from "../middlewares/multer.js";
-
+import { watchVideo } from "../controllers/video.controller.js";
 const router = Router();
 router.use(verifyJWT);
 
@@ -31,5 +31,6 @@ router
   .patch(upload.single("thumbnail"), updateVideoDetails);
 
 router.route("/").get(getFeedVideos);
+router.route("/:videoId/view").post(watchVideo);
 router.route("/vid/:videoId").get(getVideoById).delete(deleteVideo);
 export default router;
