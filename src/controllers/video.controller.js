@@ -241,10 +241,10 @@ const getFeedVideos = asyncErrorHandler(async (req, res) => {
 // this controller will be hit from frontend when frontend hits /api/videos/:id/view
 const watchVideo = asyncErrorHandler(async(req,res)=>{
   const { videoId } = req.params;
-
+  const userId = req.user._id;
   const video = await Video.findById(videoId);
   if (!video) throw new ApiError(404, "Video not found");
-  await incrementVideoView(videoId);
+  await incrementVideoView(videoId,userId);
 
   return res.status(200).json(
     new ApiResponse(200, video, "Video fetched successfully")
