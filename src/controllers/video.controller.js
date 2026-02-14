@@ -4,7 +4,7 @@ import ApiError from "../utils/ApiError.js";
 import {Video} from "../models/video.models.js";
 import uploadOnCloudinary from "../services/cloudinary.js";
 import {v2 as cloudinary} from "cloudinary";
-import { incrementVideoView } from "../services/videoCounter.service.js";
+import {incrementVideoView} from "../services/videoCounter.service.js";
 
 // controller for publishing a video
 // takes time as video is getting uploaded...
@@ -185,7 +185,7 @@ const getVideoById = asyncErrorHandler(async (req, res) => {
   });
 
   // view increment (non-blocking)
-  Video.updateOne({_id: videoId}, {$inc: {views: 1}}).catch(() => {});
+  // Video.updateOne({_id: videoId}, {$inc: {views: 1}}).catch(() => {});
   res.status(200).json(
     new ApiResponse(
       200,
@@ -194,6 +194,7 @@ const getVideoById = asyncErrorHandler(async (req, res) => {
         title: video.title,
         description: video.description,
         duration: video.duration,
+        views: video.views,
       },
       "Video ready to stream"
     )
@@ -239,18 +240,17 @@ const getFeedVideos = asyncErrorHandler(async (req, res) => {
 
 // this will increment the count inside the Redis...
 // this controller will be hit from frontend when frontend hits /api/videos/:id/view
-const watchVideo = asyncErrorHandler(async(req,res)=>{
-  const { videoId } = req.params;
+const watchVideo = asyncErrorHandler(async (req, res) => {
+  const {videoId} = req.params;
   const userId = req.user._id;
   const video = await Video.findById(videoId);
   if (!video) throw new ApiError(404, "Video not found");
-  await incrementVideoView(videoId,userId);
+  await incrementVideoView(videoId, userId);
 
-  return res.status(200).json(
-    new ApiResponse(200, video, "Video fetched successfully")
-  );
-})
-
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video fetched successfully"));
+});
 
 export {
   publishVideo,
@@ -258,5 +258,5 @@ export {
   deleteVideo,
   getVideoById,
   getFeedVideos,
-  watchVideo
+  watchVideo,
 };
