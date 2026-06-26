@@ -8,7 +8,7 @@ const app = express();
 app.use(
   // we setup this cors so that our backend is accessible to only these domains.
   cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: "http://localhost:5173",
     //   credential true says that - client app - its safe to send the cookies to this domain.
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -25,11 +25,15 @@ app.use(cookieParser());
 import userRouter from "./routes/user.routes.js";
 import videoRouter from "./routes/video.routes.js";
 import authRouter from "./routes/auth.routes.js";
+import videoReactionRouter from "./routes/like.routes.js";
+import subscriptionRouter from "./routes/subscription.routes.js";
 
 // declaring routes...
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/subscriptions", subscriptionRouter);
+app.use("/api/v1/video-reaction", videoReactionRouter);
 app.use((err, req, res, next) => {
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({
