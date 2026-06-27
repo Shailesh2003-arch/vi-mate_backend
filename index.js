@@ -1,12 +1,13 @@
 import dns from "dns";
-dns.setServers(['8.8.8.8', '1.1.1.1']);
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 import dotenv from "dotenv";
 import connectDB from "./src/db/index.js";
 import app from "./src/app.js";
 
-import { syncViewsToDB } from "./src/workers/viewSync.Worker.js";
+import {syncViewsToDB} from "./src/workers/viewSync.Worker.js";
 import cron from "node-cron";
 dotenv.config({path: "./.env"});
+import {syncVideoReactions} from "./src/workers/reactionSyncWorker.js";
 
 connectDB()
   .then(() => {
@@ -23,4 +24,8 @@ connectDB()
 
 cron.schedule("*/1 * * * *", async () => {
   await syncViewsToDB();
+});
+
+cron.schedule("* * * * *", async () => {
+  await syncVideoReactions();
 });
