@@ -5,6 +5,7 @@ import {Video} from "../models/video.models.js";
 import uploadOnCloudinary from "../services/cloudinary.js";
 import {v2 as cloudinary} from "cloudinary";
 import {incrementVideoView} from "../services/videoCounter.service.js";
+import {Subscription} from "../models/subscription.model.js";
 
 // controller for publishing a video
 // takes time as video is getting uploaded...
@@ -36,13 +37,17 @@ const publishVideo = asyncErrorHandler(async (req, res) => {
   let uploadedVideoFile;
   // upload media to cloudinary
   try {
-    uploadedThumbnail = await uploadOnCloudinary(thumbnailFileLocalPath);
-    uploadedVideoFile = await uploadOnCloudinary(videoFileLocalPath);
+    uploadedThumbnail = await uploadOnCloudinary(
+      thumbnailFileLocalPath,
+      "image"
+    );
+    uploadedVideoFile = await uploadOnCloudinary(videoFileLocalPath, "video");
   } catch (error) {
     if (uploadedThumbnail?.public_id) {
       await cloudinary.uploader.destroy(uploadedThumbnail.public_id);
     }
-    throw new ApiError(500, "Media upload failed");
+
+    throw error; // temporarily throw original error
   }
 
   const videoDuration = uploadedVideoFile.duration;
@@ -67,7 +72,7 @@ const publishVideo = asyncErrorHandler(async (req, res) => {
     new ApiResponse(
       201,
       {
-        id: publishVideo._id,
+        id: publishedVideo._id,
         title: publishedVideo.title,
         thumbnail: publishedVideo.thumbnail?.url,
         duration: publishedVideo.duration,
@@ -168,11 +173,16 @@ const deleteVideo = asyncErrorHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Video deleted successfully"));
 });
 
-// [LookAtMe]
-// I need to get views -> which will be coming from frontend as event (browser-event) and at backend I will verify it and increase view -> redis counter (DB -> source of truth)
 const getVideoById = asyncErrorHandler(async (req, res) => {
   const {videoId} = req.params;
-  const video = await Video.findById(videoId);
+  const video = await Video.findById(videoId).populate(
+    "owner",
+    "username avatar.url subscribersCount"
+  );
+  const isSubscribed = await Subscription.exists({
+    subscriber: req.user._id,
+    channel: video.owner._id,
+  });
   if (!video) {
     throw new ApiError(404, "Video not found");
   }
@@ -184,17 +194,26 @@ const getVideoById = asyncErrorHandler(async (req, res) => {
     expires_at: Math.floor(Date.now() / 1000) + 300,
   });
 
-  // view increment (non-blocking)
-  // Video.updateOne({_id: videoId}, {$inc: {views: 1}}).catch(() => {});
   res.status(200).json(
     new ApiResponse(
       200,
       {
         streamUrl,
-        title: video.title,
-        description: video.description,
-        duration: video.duration,
-        views: video.views,
+        video: {
+          _id: video._id,
+          title: video.title,
+          description: video.description,
+          duration: video.duration,
+          views: video.views,
+          createdAt: video.createdAt,
+        },
+        channel: {
+          _id: video.owner._id,
+          name: video.owner.username,
+          avatar: video.owner.avatar.url,
+          subscribersCount: video.owner.subscribersCount,
+          isSubscribed: !!isSubscribed,
+        },
       },
       "Video ready to stream"
     )
@@ -249,7 +268,7 @@ const watchVideo = asyncErrorHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, video, "Video fetched successfully"));
+    .json(new ApiResponse(200, null, "View Registered Successfully"));
 });
 
 export {
