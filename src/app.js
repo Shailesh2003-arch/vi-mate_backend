@@ -33,7 +33,7 @@ app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/subscriptions", subscriptionRouter);
-app.use("/api/v1/video-reaction", videoReactionRouter);
+app.use("/api/v1/likes", videoReactionRouter);
 app.use((err, req, res, next) => {
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({
