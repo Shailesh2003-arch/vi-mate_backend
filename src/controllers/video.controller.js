@@ -271,6 +271,58 @@ const watchVideo = asyncErrorHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "View Registered Successfully"));
 });
 
+const getRecommendedVideos = asyncErrorHandler(async (req, res) => {
+  const {videoId} = req.params;
+
+  // Verify the current video exists
+  const video = await Video.findById(videoId).select("_id");
+
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  const recommendedVideos = await Video.find({
+    _id: {$ne: videoId},
+  })
+    .select("title thumbnail duration views createdAt owner")
+    .populate("owner", "username avatar.url")
+    .sort({createdAt: -1})
+    .limit(10)
+    .lean();
+
+  const formattedVideos = recommendedVideos.map((video) => ({
+    _id: video._id,
+
+    title: video.title,
+
+    thumbnail: video.thumbnail.url,
+
+    duration: video.duration,
+
+    views: video.views,
+
+    createdAt: video.createdAt,
+
+    channel: {
+      _id: video.owner._id,
+
+      name: video.owner.username,
+
+      avatar: video.owner.avatar.url,
+    },
+  }));
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        formattedVideos,
+        "Recommended videos fetched successfully."
+      )
+    );
+});
+
 export {
   publishVideo,
   updateVideoDetails,
@@ -278,4 +330,5 @@ export {
   getVideoById,
   getFeedVideos,
   watchVideo,
+  getRecommendedVideos,
 };
