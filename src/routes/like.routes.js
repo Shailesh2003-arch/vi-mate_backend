@@ -4,6 +4,6 @@ import {toggleVideoReaction} from "../controllers/like.controller.js";
 const router = Router();
 
 router.use(verifyJWT);
-router.route("/:videoId/reaction").post(toggleVideoReaction);
+router.route("/:videoId/reaction").post(verifyJWT, toggleVideoReaction);
 
 export default router;
