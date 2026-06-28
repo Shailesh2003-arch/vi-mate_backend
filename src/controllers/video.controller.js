@@ -6,6 +6,9 @@ import uploadOnCloudinary from "../services/cloudinary.js";
 import {v2 as cloudinary} from "cloudinary";
 import {incrementVideoView} from "../services/videoCounter.service.js";
 import {Subscription} from "../models/subscription.model.js";
+import {userReactionKey} from "../utils/redis/rediskeys.js";
+import redis from "../config/redis.js";
+import {likesDeltaKey, dislikesDeltaKey} from "../utils/redis/rediskeys.js";
 
 // controller for publishing a video
 // takes time as video is getting uploaded...
@@ -173,19 +176,97 @@ const deleteVideo = asyncErrorHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Video deleted successfully"));
 });
 
+// const getVideoById = asyncErrorHandler(async (req, res) => {
+//   const {videoId} = req.params;
+//   const video = await Video.findById(videoId).populate(
+//     "owner",
+//     "username avatar.url subscribersCount"
+//   );
+//   if (!video) {
+//     throw new ApiError(404, "Video not found");
+//   }
+//   const isSubscribed = await Subscription.exists({
+//     subscriber: req.user._id,
+//     channel: video.owner._id,
+//   });
+
+//   const reaction = await redis.get(userReactionKey(videoId, req.user._id));
+//   const likesDelta = parseInt(await redis.get(likesDeltaKey(videoId))) || 0;
+
+//   const dislikesDelta =
+//     parseInt(await redis.get(dislikesDeltaKey(videoId))) || 0;
+
+//   const streamUrl = cloudinary.url(video.videoFile.public_id, {
+//     resource_type: "video",
+//     streaming_profile: "auto",
+//     format: "m3u8",
+//     sign_url: true,
+//     expires_at: Math.floor(Date.now() / 1000) + 300,
+//   });
+
+//   res.status(200).json(
+//     new ApiResponse(
+//       200,
+//       {
+//         streamUrl,
+//         video: {
+//           _id: video._id,
+//           title: video.title,
+//           description: video.description,
+//           duration: video.duration,
+//           views: video.views,
+//           likes: video.likes + likesDelta,
+//           dislikes: video.dislikes + dislikesDelta,
+//           userReaction: reaction,
+//           createdAt: video.createdAt,
+//         },
+//         channel: {
+//           _id: video.owner._id,
+//           name: video.owner.username,
+//           avatar: video.owner.avatar.url,
+//           subscribersCount: video.owner.subscribersCount,
+//           isSubscribed: !!isSubscribed,
+//         },
+//       },
+//       "Video ready to stream"
+//     )
+//   );
+// });
+
 const getVideoById = asyncErrorHandler(async (req, res) => {
   const {videoId} = req.params;
+
+  // 1. Fetch video
   const video = await Video.findById(videoId).populate(
     "owner",
     "username avatar.url subscribersCount"
   );
-  const isSubscribed = await Subscription.exists({
-    subscriber: req.user._id,
-    channel: video.owner._id,
-  });
+
   if (!video) {
     throw new ApiError(404, "Video not found");
   }
+
+  // 2. Fetch all independent data in parallel
+  const [isSubscribed, userReaction, likesDelta, dislikesDelta] =
+    await Promise.all([
+      Subscription.exists({
+        subscriber: req.user._id,
+        channel: video.owner._id,
+      }),
+
+      redis.get(userReactionKey(videoId, req.user._id)),
+
+      redis.get(likesDeltaKey(videoId)),
+
+      redis.get(dislikesDeltaKey(videoId)),
+    ]);
+
+  // 3. Calculate latest counts
+  const latestLikes = video.likes + (parseInt(likesDelta) || 0);
+
+  const latestDislikes = video.dislikes + (parseInt(dislikesDelta) || 0);
+
+  // 4. Generate signed streaming URL
   const streamUrl = cloudinary.url(video.videoFile.public_id, {
     resource_type: "video",
     streaming_profile: "auto",
@@ -194,25 +275,36 @@ const getVideoById = asyncErrorHandler(async (req, res) => {
     expires_at: Math.floor(Date.now() / 1000) + 300,
   });
 
-  res.status(200).json(
+  // 5. Send response
+  return res.status(200).json(
     new ApiResponse(
       200,
       {
         streamUrl,
+
         video: {
           _id: video._id,
           title: video.title,
           description: video.description,
           duration: video.duration,
+
           views: video.views,
+
+          likes: latestLikes,
+          dislikes: latestDislikes,
+
+          userReaction,
+
           createdAt: video.createdAt,
         },
+
         channel: {
           _id: video.owner._id,
           name: video.owner.username,
           avatar: video.owner.avatar.url,
+
           subscribersCount: video.owner.subscribersCount,
-          isSubscribed: !!isSubscribed,
+          isSubscribed: Boolean(isSubscribed),
         },
       },
       "Video ready to stream"
