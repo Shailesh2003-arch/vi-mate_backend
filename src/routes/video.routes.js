@@ -3,12 +3,13 @@ import verifyJWT from "../middlewares/auth.middleware.js";
 import {
   deleteVideo,
   getFeedVideos,
+  getRecommendedVideos,
   getVideoById,
   publishVideo,
   updateVideoDetails,
 } from "../controllers/video.controller.js";
 import {upload} from "../middlewares/multer.js";
-import { watchVideo } from "../controllers/video.controller.js";
+import {watchVideo} from "../controllers/video.controller.js";
 const router = Router();
 router.use(verifyJWT);
 
@@ -33,4 +34,5 @@ router
 router.route("/").get(getFeedVideos);
 router.route("/:videoId/view").post(watchVideo);
 router.route("/vid/:videoId").get(getVideoById).delete(deleteVideo);
+router.route("/:videoId/recommendations").get(getRecommendedVideos);
 export default router;
