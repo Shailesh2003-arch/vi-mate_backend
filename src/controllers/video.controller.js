@@ -1,19 +1,19 @@
 import asyncErrorHandler from "../utils/asyncErrorHandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
-import {Video} from "../models/video.models.js";
+import { Video } from "../models/video.models.js";
 import uploadOnCloudinary from "../services/cloudinary.js";
-import {v2 as cloudinary} from "cloudinary";
-import {incrementVideoView} from "../services/videoCounter.service.js";
-import {Subscription} from "../models/subscription.model.js";
-import {userReactionKey} from "../utils/redis/rediskeys.js";
+import { v2 as cloudinary } from "cloudinary";
+import { incrementVideoView } from "../services/videoCounter.service.js";
+import { Subscription } from "../models/subscription.model.js";
+import { userReactionKey } from "../utils/redis/redisKeys.js";
 import redis from "../config/redis.js";
-import {likesDeltaKey, dislikesDeltaKey} from "../utils/redis/rediskeys.js";
+import { likesDeltaKey, dislikesDeltaKey } from "../utils/redis/redisKeys.js";
 
 // controller for publishing a video
 // takes time as video is getting uploaded...
 const publishVideo = asyncErrorHandler(async (req, res) => {
-  let {title, description} = req.body;
+  let { title, description } = req.body;
 
   title = title.trim();
   description = description.trim();
@@ -87,7 +87,7 @@ const publishVideo = asyncErrorHandler(async (req, res) => {
 
 // controller for updating video details.
 const updateVideoDetails = asyncErrorHandler(async (req, res) => {
-  const {videoId} = req.params;
+  const { videoId } = req.params;
   const video = await Video.findById(videoId);
   if (!video) {
     throw new ApiError(404, "Video does not exist");
@@ -139,8 +139,8 @@ const updateVideoDetails = asyncErrorHandler(async (req, res) => {
   }
   const updatedVideo = await Video.findByIdAndUpdate(
     videoId,
-    {$set: updatableEntities},
-    {new: true}
+    { $set: updatableEntities },
+    { new: true }
   );
   res
     .status(200)
@@ -149,7 +149,7 @@ const updateVideoDetails = asyncErrorHandler(async (req, res) => {
 
 // controller for deleting video.
 const deleteVideo = asyncErrorHandler(async (req, res) => {
-  const {videoId} = req.params;
+  const { videoId } = req.params;
   const video = await Video.findById(videoId);
   if (!video) {
     throw new ApiError(404, "Video not found");
@@ -234,7 +234,7 @@ const deleteVideo = asyncErrorHandler(async (req, res) => {
 // });
 
 const getVideoById = asyncErrorHandler(async (req, res) => {
-  const {videoId} = req.params;
+  const { videoId } = req.params;
 
   // 1. Fetch video
   const video = await Video.findById(videoId).populate(
@@ -326,7 +326,7 @@ const getFeedVideos = asyncErrorHandler(async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 12, 50);
   const skip = (page - 1) * limit;
 
-  const sortType = req.query.sort === "popular" ? {views: -1} : {createdAt: -1}; // default: latest
+  const sortType = req.query.sort === "popular" ? { views: -1 } : { createdAt: -1 }; // default: latest
   const videos = await Video.find({})
     .sort(sortType)
     .skip(skip)
@@ -352,7 +352,7 @@ const getFeedVideos = asyncErrorHandler(async (req, res) => {
 // this will increment the count inside the Redis...
 // this controller will be hit from frontend when frontend hits /api/videos/:id/view
 const watchVideo = asyncErrorHandler(async (req, res) => {
-  const {videoId} = req.params;
+  const { videoId } = req.params;
   const userId = req.user._id;
   const video = await Video.findById(videoId);
   if (!video) throw new ApiError(404, "Video not found");
@@ -364,7 +364,7 @@ const watchVideo = asyncErrorHandler(async (req, res) => {
 });
 
 const getRecommendedVideos = asyncErrorHandler(async (req, res) => {
-  const {videoId} = req.params;
+  const { videoId } = req.params;
 
   // Verify the current video exists
   const video = await Video.findById(videoId).select("_id");
@@ -374,11 +374,11 @@ const getRecommendedVideos = asyncErrorHandler(async (req, res) => {
   }
 
   const recommendedVideos = await Video.find({
-    _id: {$ne: videoId},
+    _id: { $ne: videoId },
   })
     .select("title thumbnail duration views createdAt owner")
     .populate("owner", "username avatar.url")
-    .sort({createdAt: -1})
+    .sort({ createdAt: -1 })
     .limit(10)
     .lean();
 
