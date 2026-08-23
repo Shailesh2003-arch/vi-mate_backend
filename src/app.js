@@ -27,6 +27,8 @@ import videoRouter from "./routes/video.routes.js";
 import authRouter from "./routes/auth.routes.js";
 import videoReactionRouter from "./routes/like.routes.js";
 import subscriptionRouter from "./routes/subscription.routes.js";
+import commentRouter from "./routes/comment.routes.js";
+import channelsRouter from "./routes/channel.route.js";
 
 // declaring routes...
 app.use("/api/v1/users", userRouter);
@@ -34,6 +36,8 @@ app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/subscriptions", subscriptionRouter);
 app.use("/api/v1/likes", videoReactionRouter);
+app.use("/api/v1/comments", commentRouter);
+app.use("/api/v1/channels", channelsRouter);
 app.use((err, req, res, next) => {
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({
