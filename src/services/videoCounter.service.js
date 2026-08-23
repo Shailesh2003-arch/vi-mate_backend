@@ -1,5 +1,5 @@
 import redis from "../config/redis.js";
-import {videoCounterKey, videoViewsKey} from "../utils/redis/rediskeys.js";
+import { videoCounterKey, videoViewsKey } from "../utils/redis/redisKeys.js";
 
 export const incrementVideoView = async (videoId, userId) => {
   const dedupeKey = videoViewsKey(videoId, userId);
